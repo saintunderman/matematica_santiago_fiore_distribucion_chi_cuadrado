@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Distribución χ² (Chi-cuadrado) — Análisis Visual Interactivo</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- MathJax Configuration -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true,
+        processEnvironments: true
+      },
+      options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+      }
+    };
+  </script>
+  <script type="text/javascript" id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+  </script>
+  
+  <!-- Chart.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+  <style>
+    /* --- Base & Theme Variables --- */
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8fafc;
+      --bg-card: #ffffff;
+      --glass: rgba(255, 255, 255, 0.95);
+      --glass-border: rgba(0, 0, 0, 0.08);
+      --text-primary: #1e293b;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
+      --accent-yellow: #3b82f6;
+      --accent-red: #ef4444;
+      --accent-amber: #f59e0b;
+      --accent-green: #10b981;
+      --accent-purple: #8b5cf6;
+      --accent-orange: #f97316;
+      --accent-yellow: #eab308;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --radius: 16px;
+      --shadow-glow: 0 0 30px rgba(234, 179, 8, 0.15);
+      --shadow-card: 0 4px 25px rgba(0, 0, 0, 0.08);
+      --border-light: rgba(0, 0, 0, 0.06);
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #0a0f1c;
+      --bg-secondary: #1a1f2e;
+      --bg-card: rgba(26, 31, 46, 0.95);
+      --glass: rgba(255, 255, 255, 0.03);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --text-primary: #f1f5f9;
+      --text-secondary: #e2e8f0;
+      --text-muted: #94a3b8;
+      --border-light: rgba(255, 255, 255, 0.08);
+    }
+
+    /* --- General Styles --- */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 2rem;
+      -webkit-font-smoothing: antialiased;
+      transition: all 0.3s ease;
+    }
+
+    [data-theme="dark"] body {
+      background: 
+        radial-gradient(circle at 15% 15%, rgba(234, 179, 8, 0.08) 0%, transparent 45%),
+        radial-gradient(circle at 85% 85%, rgba(249, 115, 22, 0.08) 0%, transparent 45%),
+        radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 60%),
+        linear-gradient(135deg, var(--bg-primary) 0%, #0f1419 100%);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* --- Header & Theming --- */
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+      padding: 3rem 2rem;
+      background: var(--bg-card);
+      backdrop-filter: blur(30px);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-card);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .theme-toggle {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: var(--glass);
+      border: 1px solid var(--border-light);
+      border-radius: 50px;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      transition: all 0.3s ease;
+    }
+
+    .theme-toggle:hover {
+      background: var(--accent-yellow);
+      color: white;
+      transform: scale(1.05);
+    }
+
+    header h1 {
+      font-size: clamp(2.2rem, 5vw, 3.5rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent-yellow) 0%, var(--accent-orange) 50%, var(--accent-red) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    header p {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      max-width: 900px;
+      margin: 0 auto;
+      line-height: 1.7;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* --- Layout & Cards --- */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+      margin-bottom: 3rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(30px);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      padding: 2.5rem;
+      box-shadow: var(--shadow-card);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent-yellow), rgba(255,255,255,0.3));
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+
+    .card:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: var(--shadow-card), var(--shadow-glow);
+    }
+
+    .card-header {
+      margin-bottom: 2rem;
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .card-title h2 {
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .notation {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--glass);
+      padding: 0.4rem 1rem;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      border: 1px solid var(--border-light);
+    }
+
+    /* --- Toggleable Sections & Formulas --- */
+    .toggle-button {
+      background: var(--accent-yellow);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-left: auto;
+    }
+
+    .toggle-button:hover {
+      background: var(--accent-orange);
+      transform: scale(1.05);
+    }
+    
+    .toggle-button.formula-btn { background: var(--accent-yellow); }
+    .toggle-button.moments-btn { background: var(--accent-orange); }
+    .toggle-button.applications-btn { background: var(--accent-purple); }
+    .toggle-button.df-btn { background: var(--accent-green); }
+
+    .formula-section {
+      margin: 1.5rem 0;
+      padding: 0;
+      background: transparent;
+      border: none;
+      overflow: hidden;
+      transition: all 0.5s ease;
+      max-height: 0;
+      opacity: 0;
+    }
+
+    .formula-section.show {
+      max-height: 1500px; /* Increased to accommodate new content */
+      opacity: 1;
+      padding: 2rem;
+      background: var(--glass);
+      border-radius: 16px;
+      border: 1px solid var(--border-light);
+      margin: 1.5rem 0;
+    }
+
+    .formula-title {
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--text-primary);
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .formula-title::before {
+      content: '∴';
+      color: var(--accent-yellow);
+      font-size: 1.2rem;
+    }
+
+    .formula {
+      margin: 1rem 0;
+      padding: 1rem;
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: 12px;
+      text-align: center;
+      border: 1px solid var(--border-light);
+      overflow-x: auto;
+    }
+
+    [data-theme="dark"] .formula { background: rgba(0, 0, 0, 0.3); }
+
+    .formula-explanation {
+      background: rgba(234, 179, 8, 0.1);
+      border-left: 4px solid var(--accent-yellow);
+      padding: 1rem 1.5rem;
+      margin: 1.5rem 0;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    [data-theme="dark"] .formula-explanation { background: rgba(234, 179, 8, 0.15); }
+    .formula-explanation ul { margin-top: 0.5rem; padding-left: 1.5rem; }
+
+    /* --- Controls & Chart --- */
+    .controls {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .chip {
+      background: var(--glass);
+      color: var(--text-secondary);
+      padding: 0.6rem 1.2rem;
+      border-radius: 25px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      border: 1px solid var(--border-light);
+    }
+
+    .chip:hover {
+      background: var(--accent-yellow);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 300px !important;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--glass), var(--bg-secondary));
+      border: 1px solid var(--border-light);
+      margin: 1.5rem 0;
+      display: block;
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    canvas:hover {
+      box-shadow: 0 0 0 2px var(--accent-yellow), var(--shadow-card);
+    }
+
+    .slider-container {
+      margin: 1.5rem 0;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+      gap: 1rem;
+    }
+
+    .slider-label {
+      min-width: 120px;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .slider-value {
+      min-width: 40px;
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--glass);
+      padding: 0.3rem 0.8rem;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      border: 1px solid var(--border-light);
+    }
+    
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+    }
+
+    .slider-wrapper {
+      flex: 1;
+      position: relative;
+      padding: 15px 0;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 12px;
+      border-radius: 6px;
+      background: var(--glass);
+      outline: none;
+      -webkit-appearance: none;
+      position: relative;
+      z-index: 2;
+    }
+
+    .slider-track {
+      position: absolute;
+      height: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      left: 0;
+      right: 0;
+      background: var(--accent-yellow);
+      opacity: 0.3;
+      border-radius: 3px;
+      z-index: 1;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent-yellow);
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      border: 2px solid white;
+      transition: all 0.2s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent-yellow);
+      cursor: pointer;
+      border: 2px solid white;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    input[type="range"]::-moz-range-thumb:hover {
+      transform: scale(1.15);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 8px;
+      border-radius: 4px;
+      background: linear-gradient(to right, var(--accent-yellow) 0%, var(--accent-yellow) var(--thumb-pos, 50%), var(--glass) var(--thumb-pos, 50%), var(--glass) 100%);
+    }
+
+    input[type="range"]::-moz-range-track {
+      height: 8px;
+      border-radius: 4px;
+      background: var(--glass);
+    }
+
+    .slider-limits {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 5px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .legend {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      margin-top: -0.5rem;
+      margin-bottom: 2rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      padding: 0.5rem 1rem;
+      background: var(--glass);
+      border-radius: 12px;
+      border: 1px solid var(--border-light);
+    }
+
+    .legend-dot {
+      width: 14px;
+      height: 6px;
+      border-radius: 6px;
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    /* --- Content Sections --- */
+    .info { margin-top: 1rem; }
+    .description { color: var(--text-secondary); line-height: 1.7; margin-bottom: 2rem; font-size: 1rem; }
+    .advantages-section { display: grid; gap: 1.5rem; }
+
+    .advantage, .disadvantage {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      padding: 1.5rem;
+      border-radius: 16px;
+      position: relative;
+      transition: all 0.3s ease;
+      border: 1px solid;
+    }
+    .advantage { background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(34, 197, 94, 0.03)); border-color: rgba(34, 197, 94, 0.2); }
+    .disadvantage { background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(239, 68, 68, 0.03)); border-color: rgba(239, 68, 68, 0.2); }
+    .advantage:hover, .disadvantage:hover { transform: translateX(8px); }
+    .advantage::before { content: '✓'; color: var(--success); font-weight: bold; font-size: 1.4rem; flex-shrink: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(34, 197, 94, 0.15); }
+    .disadvantage::before { content: '✗'; color: var(--danger); font-weight: bold; font-size: 1.4rem; flex-shrink: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(239, 68, 68, 0.15); }
+
+    .adv-label, .disadv-label { font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem; letter-spacing: 0.5px; }
+    .adv-label { color: var(--success); }
+    .disadv-label { color: var(--danger); }
+    .adv-content, .disadv-content { color: var(--text-secondary); line-height: 1.6; font-size: 0.95rem; }
+
+    .applications-section { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+    .application-card { background: var(--glass); border-radius: 16px; padding: 1.5rem; border: 1px solid var(--border-light); transition: all 0.3s ease; }
+    .application-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-card); }
+    .app-icon { font-size: 2rem; margin-bottom: 1rem; color: var(--accent-yellow); }
+    .app-title { font-weight: 600; margin-bottom: 0.75rem; color: var(--text-primary); font-size: 1.1rem; }
+    .app-description { color: var(--text-secondary); line-height: 1.6; font-size: 0.95rem; }
+
+    /* --- Comparison Table --- */
+    .comparison-section { margin-top: 2rem; padding: 2rem; background: var(--glass); border-radius: 16px; border: 1px solid var(--border-light); }
+    .comparison-title { font-weight: 600; margin-bottom: 1.5rem; color: var(--text-primary); font-size: 1.2rem; text-align: center; }
+    .comparison-table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: var(--bg-card); border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-card); }
+    .comparison-table th, .comparison-table td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-light); }
+    .comparison-table th { background-color: var(--accent-yellow); color: white; font-weight: 600; }
+    .comparison-table tr:last-child td { border-bottom: none; }
+    .comparison-table tr:hover { background-color: var(--glass); }
+
+    /* --- Footer --- */
+    footer { text-align: center; padding: 2rem; color: var(--text-muted); background: var(--bg-card); backdrop-filter: blur(30px); border: 1px solid var(--border-light); border-radius: var(--radius); margin-top: 2rem; }
+    footer a { color: var(--accent-yellow); text-decoration: none; font-weight: 500; transition: all 0.2s ease; }
+    footer a:hover { color: var(--accent-orange); text-decoration: underline; }
+
+    /* --- MathJax & Modal --- */
+    .MathJax { color: var(--text-secondary) !important; font-size: 1.1em !important; }
+    mjx-container[jax="CHTML"] { color: var(--text-secondary) !important; }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(5px);
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .modal.show { display: flex; opacity: 1; }
+    .modal-content {
+      background-color: var(--bg-card);
+      padding: 2rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-card), 0 0 40px rgba(0, 0, 0, 0.2);
+      max-width: 90%;
+      max-height: 90%;
+      width: auto;
+      position: relative;
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+    }
+    .modal.show .modal-content { transform: scale(1); }
+    .close-modal {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      font-size: 1.5rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      background: var(--glass);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-light);
+      transition: all 0.2s ease;
+    }
+    .close-modal:hover { color: var(--danger); transform: rotate(90deg); }
+    .modal-canvas-container { position: relative; width: 700px; height: 450px; }
+    .modal-title { margin-bottom: 1.5rem; color: var(--text-primary); font-size: 1.4rem; text-align: center; }
+
+    /* --- Responsive Design --- */
+    @media (max-width: 768px) {
+      body { padding: 1rem; }
+      .grid { grid-template-columns: 1fr; gap: 2rem; }
+      .card { padding: 2rem; }
+      canvas { height: 240px !important; }
+      header { padding: 2rem 1.5rem; }
+      .card-title { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+      .controls { justify-content: center; }
+      .slider-row { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+      .slider-label { min-width: auto; }
+      .slider-wrapper { width: 100%; }
+      .modal-content { padding: 1.5rem; width: 95%; }
+      .modal-canvas-container { width: 100%; height: 350px; }
+      .comparison-table { font-size: 0.9rem; }
+    }
+
+    @media (max-width: 480px) {
+      .formula-section.show { padding: 1.5rem; }
+      .advantage, .disadvantage { padding: 1.25rem; }
+      .modal-canvas-container { height: 280px; }
+      .comparison-table { font-size: 0.8rem; }
+      .comparison-table th, .comparison-table td { padding: 0.75rem; }
+    }
+  </style>
+</head>
+<body data-theme="light">
+  <div class="container">
+    <header>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Cambiar tema de color">🌙 Modo Oscuro</button>
+      <h1>Distribución $\chi^2$ (Chi-cuadrado)</h1>
+      <p>Análisis interactivo de la distribución Chi-cuadrado. Explora sus propiedades, fórmulas, aplicaciones y visualizaciones con controles dinámicos para una comprensión profunda de esta distribución fundamental en pruebas de hipótesis y análisis de varianza.</p>
+    </header>
+
+    <main class="grid">
+      <!-- Chi-cuadrado -->
+      <section class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <h2>Distribución $\chi^2$ (Chi-cuadrado)</h2>
+            <code class="notation">$X \sim \chi^2(\nu)$</code>
+          </div>
+          
+          <div class="controls">
+            <button class="toggle-button formula-btn" onclick="toggleSection(this, 'chi-formulas')">🔍 Ver Fórmulas</button>
+            <button class="toggle-button moments-btn" onclick="toggleSection(this, 'chi-moments')">📊 Ver Momentos</button>
+            <button class="toggle-button applications-btn" onclick="toggleSection(this, 'chi-applications')">📋 Ver Aplicaciones</button>
+            <button class="toggle-button df-btn" onclick="toggleSection(this, 'chi-df-explanation')">📖 Grados de Libertad</button>
+          </div>
+
+          <div id="chi-formulas" class="formula-section">
+            <div class="formula-title">Función de Densidad de Probabilidad (PDF)</div>
+            <div class="formula">$$f(x; \nu) = \frac{1}{2^{\nu/2}\Gamma(\nu/2)} x^{\nu/2-1} e^{-x/2}$$</div>
+            <div class="description" style="font-size: 0.9rem; margin-top: 0.5rem;">
+              Para $x > 0$ y $\nu > 0$, donde $\nu$ son los grados de libertad y $\Gamma$ es la función gamma.
+            </div>
+            
+            <div class="formula-title">Función de Distribución Acumulada (CDF)</div>
+            <div class="formula">$$F(x; \nu) = \frac{\gamma(\nu/2, x/2)}{\Gamma(\nu/2)}$$</div>
+            <div class="description" style="font-size: 0.9rem; margin-top: 0.5rem;">
+              Donde $\gamma(s,t)$ es la función gamma incompleta inferior.
+            </div>
+            
+            <div class="formula-title">Relación con Variables Normales</div>
+            <div class="formula">
+              $\text{Si } Z_1, Z_2, \ldots, Z_\nu \sim \mathcal{N}(0,1) \text{ son independientes, entonces}$
+              $$X = Z_1^2 + Z_2^2 + \ldots + Z_\nu^2 \sim \chi^2(\nu)$$
+            </div>
+            
+            <div class="formula-title">Función Generadora de Momentos (MGF)</div>
+            <div class="formula">$M_X(t) = (1-2t)^{-\nu/2} \quad \text{para } t < \frac{1}{2}$</div>
+            
+            <div class="formula-explanation">
+              <p><strong>Origen de la distribución $\chi^2$:</strong> La distribución $\chi^2$ surge naturalmente como la suma de cuadrados de variables normales estándar independientes. Si tenemos $\nu$ variables aleatorias $Z_1, Z_2, \ldots, Z_\nu$ cada una con distribución normal estándar ($Z_i \sim \mathcal{N}(0,1)$) e independientes entre sí, entonces la suma de sus cuadrados sigue una distribución chi-cuadrado con $\nu$ grados de libertad. Esta propiedad es fundamental en estadística, ya que explica cómo la distribución $\chi^2$ aparece en el análisis de varianzas muestrales y en pruebas de bondad de ajuste.</p>
+            </div>
+
+            <div class="formula-explanation" style="border-left-color: var(--accent-green); background: rgba(16, 185, 129, 0.1);">
+              <p><strong>Relación con la Distribución Gamma:</strong> La distribución $\chi^2$ es un caso especial de la <strong>Distribución Gamma</strong>. Específicamente, una variable aleatoria que sigue una distribución $\chi^2(\nu)$ es equivalente a una variable que sigue una distribución Gamma con parámetro de forma $k = \nu/2$ y parámetro de escala $\theta = 2$.</p>
+              <p style="text-align: center; margin-top: 0.5rem;">$\chi^2(\nu) \equiv \text{Gamma}(k=\nu/2, \theta=2)$</p>
+              <p>Esta conexión es importante porque vincula a la $\chi^2$ con una familia más amplia de distribuciones utilizadas para modelar tiempos de espera y otros fenómenos con valores positivos.</p>
+            </div>
+          </div>
+
+          <div id="chi-moments" class="formula-section">
+            <div class="formula-title">Momentos de la Distribución</div>
+            <div class="formula">$\text{Media: } E[X] = \nu$
+            $\text{Varianza: } \text{Var}(X) = 2\nu$
+            $\text{Asimetría: } \gamma_1 = \sqrt{\frac{8}{\nu}}$
+            $\text{Curtosis (exceso): } \gamma_2 = \frac{12}{\nu}$</div>
+            
+            <div class="formula-title">Momentos de orden superior</div>
+            <div class="formula">$E[X^k] = 2^k \frac{\Gamma(\nu/2 + k)}{\Gamma(\nu/2)}$</div>
+            
+            <div class="formula-explanation">
+              <p><strong>Interpretación de los momentos:</strong></p>
+              <ul>
+                <li>La media es igual a los grados de libertad ($\nu$).</li>
+                <li>La varianza es el doble de los grados de libertad ($2\nu$).</li>
+                <li>La asimetría decrece a medida que $\nu$ aumenta, por lo que la distribución se vuelve más simétrica.</li>
+                <li>A medida que $\nu \to \infty$, la distribución $\chi^2$ se aproxima a una distribución normal.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div id="chi-applications" class="formula-section">
+            <div class="formula-title">Aplicaciones Estadísticas Principales</div>
+            <div class="formula">
+              <ul style="text-align: left; list-style-type: none; padding-left: 0;">
+                <li>• Prueba de bondad de ajuste: $\chi^2 = \sum_{i=1}^k \frac{(O_i - E_i)^2}{E_i}$</li>
+                <li>• Prueba de independencia en tablas de contingencia</li>
+                <li>• Intervalos de confianza para la varianza: $\frac{(n-1)s^2}{\sigma^2} \sim \chi^2(n-1)$</li>
+                <li>• Análisis de varianza (ANOVA): descomposición de la suma de cuadrados</li>
+                <li>• Pruebas de homogeneidad de proporciones</li>
+                <li>• Base para la distribución $F$ de Fisher-Snedecor</li>
+              </ul>
+            </div>
+          </div>
+
+          <div id="chi-df-explanation" class="formula-section">
+            <div class="formula-title">Grados de Libertad en Chi-cuadrado</div>
+            <div class="formula-explanation">
+              <p>En la distribución $\chi^2$, los <strong>grados de libertad</strong> ($\nu$) tienen interpretaciones específicas según el contexto:</p>
+              <p><strong>1. Origen matemático:</strong> Representan el número de variables normales estándar independientes cuyos cuadrados se suman para formar la variable $\chi^2$.</p>
+              <p><strong>2. En pruebas de bondad de ajuste:</strong> $\nu = (\text{categorías}) - (\text{parámetros estimados}) - 1$</p>
+              <p><strong>3. En tablas de contingencia:</strong> $\nu = (\text{filas} - 1) \times (\text{columnas} - 1)$</p>
+              <p><strong>4. Para la varianza muestral:</strong> En la expresión $\frac{(n-1)s^2}{\sigma^2} \sim \chi^2(n-1)$, los grados de libertad son $\nu = n-1$ porque se pierde un grado de libertad al estimar la media muestral para calcular $s^2$.</p>
+              <p><strong>Efecto de $\nu$:</strong></p>
+              <ul>
+                <li>Con $\nu$ pequeños: Distribución muy asimétrica a la derecha.</li>
+                <li>Con $\nu$ medianos: La asimetría disminuye y la distribución se ensancha.</li>
+                <li>Con $\nu$ grandes ($\nu > 30$): Se aproxima a una distribución Normal $\mathcal{N}(\nu, 2\nu)$.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="meta">
+          <span class="chip">Parámetro: $\nu > 0$ (grados de libertad)</span>
+          <span class="chip">Dominio: $x \in [0, +\infty)$</span>
+          <span class="chip">Forma: Asimétrica positiva</span>
+          <span class="chip">Aproximación: $\frac{\chi^2(\nu) - \nu}{\sqrt{2\nu}} \xrightarrow{\nu \to \infty} \mathcal{N}(0,1)$</span>
+        </div>
+
+        <div class="slider-container">
+          <div class="slider-row">
+            <label for="chi-nu" class="slider-label">Grados libertad ($\nu$):</label>
+            <div class="slider-wrapper">
+              <input type="range" id="chi-nu" min="1" max="20" step="1" value="5" oninput="updateChi()">
+              <div class="slider-track"></div>
+              <div class="slider-limits">
+                <span>1</span>
+                <span>20</span>
+              </div>
+            </div>
+            <span class="slider-value" id="chi-nu-value">5</span>
+          </div>
+          <div class="slider-row">
+            <label for="compare-multiple" class="slider-label checkbox-label">
+              Comparar múltiples:
+              <input type="checkbox" id="compare-multiple" onchange="updateChi()" style="width: 20px; height: 20px;">
+            </label>
+          </div>
+        </div>
+
+        <canvas id="plot-chi" onclick="openModal('chi')"></canvas>
+        <div class="legend">
+          <div class="legend-item">
+            <span class="legend-dot" style="background: var(--accent-yellow); color: var(--accent-yellow);"></span>
+            <span>Distribución $\chi^2$</span>
+          </div>
+          <div class="legend-item" id="multiple-legend" style="display: none;">
+            <span class="legend-dot" style="background: var(--accent-orange); color: var(--accent-orange);"></span>
+            <span>Comparación múltiple</span>
+          </div>
+          <div class="legend-item">
+            <button class="toggle-button" onclick="openModal('chi')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.8rem;">
+              🔍 Ampliar Gráfico
+            </button>
+          </div>
+        </div>
+
+        <div class="comparison-section">
+          <div class="comparison-title">Características según Grados de Libertad</div>
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>Grados de Libertad ($\nu$)</th>
+                <th>Forma de la Distribución</th>
+                <th>Media</th>
+                <th>Varianza</th>
+                <th>Aplicación Típica</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>$\nu = 1$</td>
+                <td>Fuertemente asimétrica, modo en 0</td>
+                <td>1</td>
+                <td>2</td>
+                <td>Pruebas de una proporción</td>
+              </tr>
+              <tr>
+                <td>$\nu = 2$</td>
+                <td>Exponencial decreciente</td>
+                <td>2</td>
+                <td>4</td>
+                <td>Pruebas de independencia $2 \times 2$</td>
+              </tr>
+              <tr>
+                <td>$2 < \nu \le 10$</td>
+                <td>Asimétrica con modo positivo</td>
+                <td>$\nu$</td>
+                <td>$2\nu$</td>
+                <td>Tablas de contingencia pequeñas</td>
+              </tr>
+              <tr>
+                <td>$\nu > 10$</td>
+                <td>Ligeramente asimétrica</td>
+                <td>$\nu$</td>
+                <td>$2\nu$</td>
+                <td>Pruebas con muchas categorías</td>
+              </tr>
+              <tr>
+                <td>$\nu > 30$</td>
+                <td>Aproximación normal válida</td>
+                <td>$\nu$</td>
+                <td>$2\nu$</td>
+                <td>Análisis de grandes muestras</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="info">
+          <p class="description">La distribución $\chi^2$ fue desarrollada por Karl Pearson en 1900 como herramienta para pruebas de bondad de ajuste. Esta distribución surge naturalmente como la suma de cuadrados de variables normales independientes y es fundamental en el análisis de datos categóricos, pruebas de independencia y análisis de varianza. Su forma asimétrica y su soporte únicamente en valores positivos la hacen especialmente útil para modelar variabilidad y dispersión en datos experimentales.</p>
+          
+          <div class="advantages-section">
+            <div class="advantage">
+              <div>
+                <div class="adv-label">VENTAJAS PRINCIPALES</div>
+                <div class="adv-content">• Fundamental en pruebas de hipótesis no paramétricas<br>• Permite análisis de datos categóricos y tablas de contingencia<br>• Base teórica sólida para intervalos de confianza de varianza<br>• Amplia aplicación en análisis de bondad de ajuste<br>• Propiedades matemáticas bien establecidas<br>• Distribución exacta conocida para cualquier $\nu$</div>
+              </div>
+            </div>
+            
+            <div class="disadvantage">
+              <div>
+                <div class="disadv-label">LIMITACIONES</div>
+                <div class="disadv-content">• Solo aplicable a valores positivos<br>• Sensible a frecuencias esperadas muy pequeñas (generalmente $< 5$)<br>• Asume independencia de observaciones<br>• Para $\nu$ pequeños, es muy asimétrica<br>• Requiere muestras relativamente grandes para una buena aproximación<br>• No modela directamente datos continuos sin transformación</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="applications-section">
+            <div class="application-card">
+              <div class="app-icon" aria-hidden="true">📊</div>
+              <div class="app-title">Pruebas de Bondad de Ajuste</div>
+              <div class="app-description">La aplicación más común de $\chi^2$ es verificar si una muestra proviene de una distribución específica, comparando frecuencias observadas versus esperadas.</div>
+            </div>
+            
+            <div class="application-card">
+              <div class="app-icon" aria-hidden="true">📋</div>
+              <div class="app-title">Tablas de Contingencia</div>
+              <div class="app-description">Análisis de independencia entre variables categóricas, permitiendo determinar si existe una asociación estadísticamente significativa entre factores.</div>
+            </div>
+            
+            <div class="application-card">
+              <div class="app-icon" aria-hidden="true">📏</div>
+              <div class="app-title">Intervalos de Confianza para Varianza</div>
+              <div class="app-description">Construcción de intervalos para la varianza poblacional $\sigma^2$ de datos normales, utilizando la relación $(n-1)s^2/\sigma^2 \sim \chi^2(n-1)$.</div>
+            </div>
+            
+            <div class="application-card">
+              <div class="app-icon" aria-hidden="true">🔬</div>
+              <div class="app-title">Análisis de Varianza (ANOVA)</div>
+              <div class="app-description">En ANOVA, las sumas de cuadrados divididas por la varianza poblacional siguen distribuciones $\chi^2$, lo que fundamenta las pruebas F.</div>
+            </div>
+            
+            <div class="application-card">
+              <div class="app-icon" aria-hidden="true">⚖️</div>
+              <div class="app-title">Pruebas de Homogeneidad</div>
+              <div class="app-description">Verificación de si múltiples poblaciones comparten la misma distribución de proporciones para una variable categórica.</div>
+            </div>
+            
+            <div class="application-card">
+              <div class="app-icon" aria-hidden="true">🎯</div>
+              <div class="app-title">Razón de Verosimilitud</div>
+              <div class="app-description">Muchos estadísticos de prueba basados en la razón de verosimilitud (LRT) siguen asintóticamente una distribución $\chi^2$ bajo la hipótesis nula.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>Desarrollado por <a href="https://sites.google.com/view/santiago-fiore/portada" target="_blank" rel="noopener noreferrer">Matemática Santiago Fiore</a></p>
+      <p style="margin-top: 0.5rem; font-size: 0.9rem;">Recurso educativo especializado en la distribución Chi-cuadrado</p>
+    </footer>
+
+  </div>
+
+  <!-- Modal para gráficos ampliados -->
+  <div id="chart-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeModal()" aria-label="Cerrar modal">&times;</span>
+      <h3 class="modal-title" id="modal-title">Distribución $\chi^2$ (Chi-cuadrado)</h3>
+      <div class="modal-canvas-container">
+        <canvas id="modal-canvas"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+      // --- THEME TOGGLE ---
+      // Manages light/dark mode switching
+      function toggleTheme() {
+        const body = document.body;
+        const button = document.querySelector('.theme-toggle');
+        
+        if (body.getAttribute('data-theme') === 'dark') {
+          body.setAttribute('data-theme', 'light');
+          button.textContent = '🌙 Modo Oscuro';
+        } else {
+          body.setAttribute('data-theme', 'dark');
+          button.textContent = '☀️ Modo Claro';
+        }
+        
+        // Redraw charts with new theme colors
+        setTimeout(() => {
+          updateChi();
+        }, 100);
+      }
+      
+      window.toggleTheme = toggleTheme;
+
+      // --- SECTION TOGGLE ---
+      // Manages showing/hiding formula and info sections
+      function toggleSection(button, sectionId) {
+        const section = document.getElementById(sectionId);
+        const isShowing = section.classList.contains('show');
+        const buttonTextMap = {
+          'chi-formulas': ['🔍 Ver Fórmulas', '🔍 Ocultar Fórmulas'],
+          'chi-moments': ['📊 Ver Momentos', '📊 Ocultar Momentos'],
+          'chi-applications': ['📋 Ver Aplicaciones', '📋 Ocultar Aplicaciones'],
+          'chi-df-explanation': ['📖 Grados de Libertad', '📖 Ocultar Grados de Libertad']
+        };
+        
+        if (isShowing) {
+          section.classList.remove('show');
+          button.textContent = buttonTextMap[sectionId][0];
+        } else {
+          section.classList.add('show');
+          button.textContent = buttonTextMap[sectionId][1];
+          // Reprocess MathJax when showing a section to ensure proper rendering
+          if (typeof MathJax !== 'undefined' && MathJax.typeset) {
+            setTimeout(() => MathJax.typeset([`#${sectionId}`]), 100);
+          }
+        }
+      }
+      
+      window.toggleSection = toggleSection;
+
+      // --- MODAL FUNCTIONS ---
+      // Manages the enlarged chart modal
+      let modalChart = null;
+
+      function openModal(distribution) {
+        const modal = document.getElementById('chart-modal');
+        const modalTitle = document.getElementById('modal-title');
+        
+        modalTitle.innerHTML = 'Distribución $\chi^2$ (Chi-cuadrado)';
+        if (typeof MathJax !== 'undefined' && MathJax.typeset) {
+            MathJax.typeset([modalTitle]);
+        }
+        
+        modal.classList.add('show');
+        
+        setTimeout(() => createModalChart(distribution), 50);
+      }
+      
+      function closeModal() {
+        const modal = document.getElementById('chart-modal');
+        modal.classList.remove('show');
+        
+        if (modalChart) {
+          modalChart.destroy();
+          modalChart = null;
+        }
+      }
+      
+      window.openModal = openModal;
+      window.closeModal = closeModal;
+      
+      document.getElementById('chart-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'chart-modal') closeModal();
+      });
+
+      // --- MATHEMATICAL HELPER FUNCTIONS ---
+      
+      // Gamma function (Lanczos approximation)
+      function gamma(z) {
+          const g = 7;
+          const p = [
+              0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+              771.32342877765313, -176.61502916214059, 12.507343278686905,
+              -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7
+          ];
+          if (z < 0.5) return Math.PI / (Math.sin(Math.PI * z) * gamma(1 - z));
+          z -= 1;
+          let x = p[0];
+          for (let i = 1; i < g + 2; i++) x += p[i] / (z + i);
+          const t = z + g + 0.5;
+          return Math.sqrt(2 * Math.PI) * Math.pow(t, z + 0.5) * Math.exp(-t) * x;
+      }
+
+      // Chi-squared Probability Density Function (PDF)
+      function chiSquaredPDF(x, nu) {
+        if (x <= 0) return 0;
+        const coefficient = 1 / (Math.pow(2, nu/2) * gamma(nu/2));
+        const term1 = Math.pow(x, nu/2 - 1);
+        const term2 = Math.exp(-x/2);
+        const result = coefficient * term1 * term2;
+        return isFinite(result) ? result : 0;
+      }
+
+      // --- CHART CREATION LOGIC ---
+
+      function getThemeColors() {
+        const isDark = document.body.getAttribute('data-theme') === 'dark';
+        return {
+          text: isDark ? '#e2e8f0' : '#334155',
+          grid: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)'
+        };
+      }
+
+      const createChartOptions = (isModal = false) => {
+        const colors = getThemeColors();
+        return {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 500, easing: 'easeInOutQuart' },
+          plugins: {
+            legend: { display: false },
+            tooltip: { 
+              enabled: true,
+              callbacks: {
+                label: (context) => `${context.dataset.label}: ${context.parsed.y.toFixed(4)}`
+              }
+            }
+          },
+          scales: {
+            x: {
+              type: 'linear',
+              title: { display: true, text: 'x', color: colors.text, font: { size: 14, weight: '500' } },
+              ticks: { color: colors.text, maxRotation: 0 },
+              grid: { color: colors.grid }
+            },
+            y: {
+              title: { display: true, text: 'f(x)', color: colors.text, font: { size: 14, weight: '500' } },
+              ticks: { color: colors.text, maxRotation: 0, callback: (v) => v.toFixed(2) },
+              grid: { color: colors.grid },
+              beginAtZero: true
+            }
+          },
+          elements: { point: { radius: 0 }, line: { tension: 0.1 } }
+        };
+      };
+      
+      let mainChart = null;
+
+      function createChiChart(canvasId, isModal = false) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        const nu = parseFloat(document.getElementById('chi-nu').value);
+        const compareMultiple = document.getElementById('compare-multiple').checked;
+        
+        const labels = [];
+        const chiData = [], chiData2 = [], chiData3 = [];
+        
+        const maxX = Math.max(25, nu * 2.5);
+        const numPoints = isModal ? 400 : 200;
+        const step = maxX / numPoints;
+
+        for (let i = 0; i <= numPoints; i++) {
+          const x = i * step;
+          labels.push(x.toFixed(2));
+          chiData.push(chiSquaredPDF(x, nu));
+          
+          if (compareMultiple) {
+            const nu2 = Math.max(1, nu - 2);
+            const nu3 = nu + 3;
+            chiData2.push(chiSquaredPDF(x, nu2));
+            chiData3.push(chiSquaredPDF(x, nu3));
+          }
+        }
+        
+        const datasets = [{
+          label: `χ²(${nu})`,
+          data: chiData,
+          borderColor: '#eab308',
+          borderWidth: isModal ? 4 : 3,
+          fill: true,
+          backgroundColor: 'rgba(234, 179, 8, 0.1)',
+        }];
+        
+        const multipleLegend = document.getElementById('multiple-legend');
+        if (compareMultiple) {
+          const nu2 = Math.max(1, nu - 2);
+          const nu3 = nu + 3;
+          datasets.push({ label: `χ²(${nu2})`, data: chiData2, borderColor: '#f97316', borderWidth: 2, borderDash: [5, 5], fill: false });
+          datasets.push({ label: `χ²(${nu3})`, data: chiData3, borderColor: '#ef4444', borderWidth: 2, borderDash: [10, 5], fill: false });
+          multipleLegend.style.display = 'flex';
+        } else {
+          multipleLegend.style.display = 'none';
+        }
+        
+        const chartInstance = isModal ? modalChart : mainChart;
+        if (chartInstance) {
+          chartInstance.destroy();
+        }
+        
+        return new Chart(ctx, {
+          type: 'line',
+          data: { labels, datasets },
+          options: createChartOptions(isModal)
+        });
+      }
+
+      function createModalChart(distribution) {
+        if (modalChart) modalChart.destroy();
+        modalChart = createChiChart('modal-canvas', true);
+      }
+
+      function updateChi() {
+        const nu = parseFloat(document.getElementById('chi-nu').value);
+        document.getElementById('chi-nu-value').textContent = nu;
+        
+        const slider = document.getElementById('chi-nu');
+        const percent = ((nu - slider.min) / (slider.max - slider.min)) * 100;
+        slider.style.setProperty('--thumb-pos', `${percent}%`);
+        
+        mainChart = createChiChart('plot-chi');
+      }
+      
+      window.updateChi = updateChi;
+
+      // --- INITIALIZE ---
+      updateChi();
+
+    });
+  </script>
+</body>
+</html>
