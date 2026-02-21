@@ -2,9 +2,17 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes" />
+  <meta name="description" content="Análisis interactivo de la distribución Chi-cuadrado con visualizaciones dinámicas, fórmulas matemáticas y aplicaciones prácticas en estadística." />
+  <meta name="keywords" content="chi-cuadrado, estadística, distribución, análisis de datos, prueba de hipótesis" />
+  <meta name="author" content="Santiago Fiore" />
+  <meta name="theme-color" content="#eab308" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>Distribución χ² (Chi-cuadrado) — Análisis Visual Interactivo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" as="style">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   
   <!-- MathJax Configuration -->
@@ -39,13 +47,13 @@
       --text-primary: #1e293b;
       --text-secondary: #334155;
       --text-muted: #64748b;
-      --accent-yellow: #3b82f6;
+      --accent-yellow: #eab308;
+      --accent-blue: #3b82f6;
       --accent-red: #ef4444;
       --accent-amber: #f59e0b;
       --accent-green: #10b981;
       --accent-purple: #8b5cf6;
       --accent-orange: #f97316;
-      --accent-yellow: #eab308;
       --success: #22c55e;
       --danger: #ef4444;
       --radius: 16px;
@@ -80,7 +88,8 @@
       min-height: 100vh;
       padding: 2rem;
       -webkit-font-smoothing: antialiased;
-      transition: all 0.3s ease;
+      -moz-osx-font-smoothing: grayscale;
+      transition: background-color 0.3s ease, color 0.3s ease;
     }
 
     [data-theme="dark"] body {
@@ -108,6 +117,7 @@
       box-shadow: var(--shadow-card);
       position: relative;
       overflow: hidden;
+      contain: layout style paint;
     }
 
     .theme-toggle {
@@ -170,6 +180,8 @@
       position: relative;
       overflow: hidden;
       transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      contain: layout style paint;
+      will-change: transform;
     }
 
     .card::before {
@@ -233,6 +245,7 @@
     .toggle-button:hover {
       background: var(--accent-orange);
       transform: scale(1.05);
+      will-change: transform;
     }
     
     .toggle-button.formula-btn { background: var(--accent-yellow); }
@@ -246,9 +259,10 @@
       background: transparent;
       border: none;
       overflow: hidden;
-      transition: all 0.5s ease;
+      transition: max-height 0.5s ease, opacity 0.5s ease, padding 0.5s ease;
       max-height: 0;
       opacity: 0;
+      contain: content;
     }
 
     .formula-section.show {
@@ -346,6 +360,7 @@
       box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
       cursor: pointer;
       transition: all 0.3s ease;
+      contain: content;
     }
 
     canvas:hover {
@@ -401,6 +416,8 @@
       background: var(--glass);
       outline: none;
       -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
       position: relative;
       z-index: 2;
     }
@@ -534,13 +551,19 @@
     .app-description { color: var(--text-secondary); line-height: 1.6; font-size: 0.95rem; }
 
     /* --- Comparison Table --- */
-    .comparison-section { margin-top: 2rem; padding: 2rem; background: var(--glass); border-radius: 16px; border: 1px solid var(--border-light); }
+    .comparison-section { margin-top: 2rem; padding: 2rem; background: var(--glass); border-radius: 16px; border: 1px solid var(--border-light); overflow-x: auto; }
     .comparison-title { font-weight: 600; margin-bottom: 1.5rem; color: var(--text-primary); font-size: 1.2rem; text-align: center; }
     .comparison-table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: var(--bg-card); border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-card); }
     .comparison-table th, .comparison-table td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-light); }
-    .comparison-table th { background-color: var(--accent-yellow); color: white; font-weight: 600; }
+    .comparison-table th { background-color: var(--accent-yellow); color: white; font-weight: 600; white-space: nowrap; }
     .comparison-table tr:last-child td { border-bottom: none; }
     .comparison-table tr:hover { background-color: var(--glass); }
+    
+    /* Responsivo para tabla */
+    @media (max-width: 768px) {
+      .comparison-section { padding: 1.5rem; overflow-x: scroll; -webkit-overflow-scrolling: touch; }
+      .comparison-table { min-width: 600px; font-size: 0.85rem; }
+    }
 
     /* --- Footer --- */
     footer { text-align: center; padding: 2rem; color: var(--text-muted); background: var(--bg-card); backdrop-filter: blur(30px); border: 1px solid var(--border-light); border-radius: var(--radius); margin-top: 2rem; }
@@ -565,6 +588,7 @@
       align-items: center;
       opacity: 0;
       transition: opacity 0.3s ease;
+      contain: layout style paint;
     }
     .modal.show { display: flex; opacity: 1; }
     .modal-content {
@@ -606,25 +630,103 @@
     @media (max-width: 768px) {
       body { padding: 1rem; }
       .grid { grid-template-columns: 1fr; gap: 2rem; }
-      .card { padding: 2rem; }
-      canvas { height: 240px !important; }
+      .card { padding: 1.5rem; }
+      canvas { height: 250px !important; }
       header { padding: 2rem 1.5rem; }
+      header h1 { font-size: 2rem; }
+      header p { font-size: 1rem; }
       .card-title { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
-      .controls { justify-content: center; }
+      .card-title h2 { font-size: 1.4rem; }
+      .controls { justify-content: center; flex-wrap: wrap; }
+      .toggle-button { font-size: 0.8rem; padding: 0.45rem 0.9rem; }
       .slider-row { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
-      .slider-label { min-width: auto; }
+      .slider-label { min-width: auto; font-size: 0.85rem; }
+      .slider-value { font-size: 0.85rem; }
       .slider-wrapper { width: 100%; }
-      .modal-content { padding: 1.5rem; width: 95%; }
+      .modal-content { padding: 1.5rem; width: 95%; max-width: 95vw; }
       .modal-canvas-container { width: 100%; height: 350px; }
-      .comparison-table { font-size: 0.9rem; }
+      .comparison-table { font-size: 0.85rem; overflow-x: auto; display: block; }
+      .meta { gap: 0.5rem; }
+      .chip { font-size: 0.85rem; padding: 0.5rem 1rem; }
+      .legend { gap: 1rem; }
+      .legend-item { font-size: 0.85rem; padding: 0.4rem 0.8rem; }
+      .application-card { padding: 1.25rem; }
+      .app-title { font-size: 1rem; }
+      .app-description { font-size: 0.9rem; }
+      .applications-section { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 480px) {
-      .formula-section.show { padding: 1.5rem; }
-      .advantage, .disadvantage { padding: 1.25rem; }
-      .modal-canvas-container { height: 280px; }
-      .comparison-table { font-size: 0.8rem; }
-      .comparison-table th, .comparison-table td { padding: 0.75rem; }
+      body { padding: 0.75rem; }
+      header { padding: 1.5rem 1rem; }
+      header h1 { font-size: 1.75rem; line-height: 1.2; }
+      header p { font-size: 0.95rem; line-height: 1.6; }
+      .card { padding: 1.25rem; }
+      .card-title h2 { font-size: 1.25rem; }
+      .notation { font-size: 0.85rem; padding: 0.35rem 0.85rem; }
+      .formula-section.show { padding: 1.25rem; }
+      .formula { font-size: 0.9rem; padding: 0.85rem; }
+      .formula-explanation { padding: 0.85rem 1.25rem; font-size: 0.9rem; }
+      .toggle-button { font-size: 0.75rem; padding: 0.4rem 0.8rem; }
+      .advantage, .disadvantage { padding: 1rem; font-size: 0.9rem; }
+      .modal-canvas-container { height: 250px; }
+      .modal-title { font-size: 1.2rem; }
+      .comparison-table { font-size: 0.75rem; }
+      .comparison-table th, .comparison-table td { padding: 0.6rem 0.5rem; }
+      .chip { font-size: 0.8rem; padding: 0.45rem 0.85rem; }
+      canvas { height: 220px !important; }
+      .description { font-size: 0.95rem; }
+      .theme-toggle { font-size: 0.85rem; padding: 0.45rem 0.85rem; top: 0.75rem; right: 0.75rem; }
+    }
+    
+    @media (max-width: 360px) {
+      header h1 { font-size: 1.5rem; }
+      header p { font-size: 0.9rem; }
+      .card { padding: 1rem; }
+      .card-title h2 { font-size: 1.15rem; }
+      canvas { height: 200px !important; }
+      .modal-canvas-container { height: 220px; }
+      .comparison-table { font-size: 0.7rem; }
+      .chip { font-size: 0.75rem; word-break: break-word; }
+    }
+    
+    /* Landscape mode para móviles */
+    @media (max-width: 896px) and (orientation: landscape) {
+      body { padding: 0.5rem; }
+      header { padding: 1.5rem 1rem; margin-bottom: 1.5rem; }
+      header h1 { font-size: 1.75rem; }
+      header p { font-size: 0.95rem; }
+      .card { padding: 1.25rem; }
+      canvas { height: 200px !important; }
+      .modal-canvas-container { height: 70vh; }
+      .formula-section.show { max-height: 1000px; }
+    }
+    
+    /* Optimización para dispositivos táctiles */
+    @media (hover: none) and (pointer: coarse) {
+      .toggle-button, .chip, .legend-item {
+        min-height: 44px;
+        min-width: 44px;
+      }
+      
+      input[type="range"] {
+        height: 20px;
+      }
+      
+      input[type="range"]::-webkit-slider-thumb {
+        width: 28px;
+        height: 28px;
+      }
+      
+      input[type="range"]::-moz-range-thumb {
+        width: 28px;
+        height: 28px;
+      }
+      
+      input[type="checkbox"] {
+        min-width: 24px;
+        min-height: 24px;
+      }
     }
   </style>
 </head>
@@ -646,10 +748,10 @@
           </div>
           
           <div class="controls">
-            <button class="toggle-button formula-btn" onclick="toggleSection(this, 'chi-formulas')">🔍 Ver Fórmulas</button>
-            <button class="toggle-button moments-btn" onclick="toggleSection(this, 'chi-moments')">📊 Ver Momentos</button>
-            <button class="toggle-button applications-btn" onclick="toggleSection(this, 'chi-applications')">📋 Ver Aplicaciones</button>
-            <button class="toggle-button df-btn" onclick="toggleSection(this, 'chi-df-explanation')">📖 Grados de Libertad</button>
+            <button class="toggle-button formula-btn" onclick="toggleSection(this, 'chi-formulas')" aria-expanded="false" aria-controls="chi-formulas">🔍 Ver Fórmulas</button>
+            <button class="toggle-button moments-btn" onclick="toggleSection(this, 'chi-moments')" aria-expanded="false" aria-controls="chi-moments">📊 Ver Momentos</button>
+            <button class="toggle-button applications-btn" onclick="toggleSection(this, 'chi-applications')" aria-expanded="false" aria-controls="chi-applications">📋 Ver Aplicaciones</button>
+            <button class="toggle-button df-btn" onclick="toggleSection(this, 'chi-df-explanation')" aria-expanded="false" aria-controls="chi-df-explanation">📖 Grados de Libertad</button>
           </div>
 
           <div id="chi-formulas" class="formula-section">
@@ -657,6 +759,10 @@
             <div class="formula">$$f(x; \nu) = \frac{1}{2^{\nu/2}\Gamma(\nu/2)} x^{\nu/2-1} e^{-x/2}$$</div>
             <div class="description" style="font-size: 0.9rem; margin-top: 0.5rem;">
               Para $x > 0$ y $\nu > 0$, donde $\nu$ son los grados de libertad y $\Gamma$ es la función gamma.
+            </div>
+            
+            <div class="formula-explanation" style="border-left-color: var(--accent-purple); background: rgba(139, 92, 246, 0.08);">
+              <p><strong>📐 Nota sobre el dominio:</strong> La función de densidad $f(x; \nu)$ está definida para $x \in (0, +\infty)$. Cuando $0 < \nu < 2$, el término $x^{\nu/2-1}$ tiene exponente negativo, por lo que $f(x) \to +\infty$ cuando $x \to 0^+$. En particular, para $\nu = 1$: $f(x) \propto x^{-1/2}$, que diverge en el origen. La notación $(0, +\infty)$ es estándar en textos de probabilidad y estadística (Casella & Berger, Hogg & Craig, Ross).</p>
             </div>
             
             <div class="formula-title">Función de Distribución Acumulada (CDF)</div>
@@ -740,44 +846,44 @@
 
         <div class="meta">
           <span class="chip">Parámetro: $\nu > 0$ (grados de libertad)</span>
-          <span class="chip">Dominio: $x \in [0, +\infty)$</span>
+          <span class="chip">Dominio: $x \in (0, +\infty)$</span>
           <span class="chip">Forma: Asimétrica positiva</span>
-          <span class="chip">Aproximación: $\frac{\chi^2(\nu) - \nu}{\sqrt{2\nu}} \xrightarrow{\nu \to \infty} \mathcal{N}(0,1)$</span>
+          <span class="chip">Convergencia: $\frac{\chi^2(\nu) - \nu}{\sqrt{2\nu}} \xrightarrow{d} \mathcal{N}(0,1)$ cuando $\nu \to \infty$</span>
         </div>
 
         <div class="slider-container">
           <div class="slider-row">
             <label for="chi-nu" class="slider-label">Grados libertad ($\nu$):</label>
             <div class="slider-wrapper">
-              <input type="range" id="chi-nu" min="1" max="20" step="1" value="5" oninput="updateChi()">
-              <div class="slider-track"></div>
-              <div class="slider-limits">
+              <input type="range" id="chi-nu" min="1" max="20" step="1" value="5" oninput="updateChi()" aria-label="Ajustar grados de libertad" aria-valuemin="1" aria-valuemax="20" aria-valuenow="5">
+              <div class="slider-track" aria-hidden="true"></div>
+              <div class="slider-limits" aria-hidden="true">
                 <span>1</span>
                 <span>20</span>
               </div>
             </div>
-            <span class="slider-value" id="chi-nu-value">5</span>
+            <span class="slider-value" id="chi-nu-value" aria-live="polite">5</span>
           </div>
           <div class="slider-row">
             <label for="compare-multiple" class="slider-label checkbox-label">
               Comparar múltiples:
-              <input type="checkbox" id="compare-multiple" onchange="updateChi()" style="width: 20px; height: 20px;">
+              <input type="checkbox" id="compare-multiple" onchange="updateChi()" aria-label="Activar comparación de múltiples distribuciones" style="width: 20px; height: 20px;">
             </label>
           </div>
         </div>
 
-        <canvas id="plot-chi" onclick="openModal('chi')"></canvas>
-        <div class="legend">
-          <div class="legend-item">
-            <span class="legend-dot" style="background: var(--accent-yellow); color: var(--accent-yellow);"></span>
+        <canvas id="plot-chi" onclick="openModal('chi')" role="img" aria-label="Gráfico interactivo de la distribución Chi-cuadrado"></canvas>
+        <div class="legend" role="list">
+          <div class="legend-item" role="listitem">
+            <span class="legend-dot" style="background: var(--accent-yellow); color: var(--accent-yellow);" aria-hidden="true"></span>
             <span>Distribución $\chi^2$</span>
           </div>
-          <div class="legend-item" id="multiple-legend" style="display: none;">
-            <span class="legend-dot" style="background: var(--accent-orange); color: var(--accent-orange);"></span>
+          <div class="legend-item" id="multiple-legend" style="display: none;" role="listitem">
+            <span class="legend-dot" style="background: var(--accent-orange); color: var(--accent-orange);" aria-hidden="true"></span>
             <span>Comparación múltiple</span>
           </div>
-          <div class="legend-item">
-            <button class="toggle-button" onclick="openModal('chi')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.8rem;">
+          <div class="legend-item" role="listitem">
+            <button class="toggle-button" onclick="openModal('chi')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.8rem;" aria-label="Ampliar gráfico en modal">
               🔍 Ampliar Gráfico
             </button>
           </div>
@@ -798,14 +904,14 @@
             <tbody>
               <tr>
                 <td>$\nu = 1$</td>
-                <td>Fuertemente asimétrica, modo en 0</td>
+                <td>Fuertemente asimétrica, asíntota vertical en 0</td>
                 <td>1</td>
                 <td>2</td>
                 <td>Pruebas de una proporción</td>
               </tr>
               <tr>
                 <td>$\nu = 2$</td>
-                <td>Exponencial decreciente</td>
+                <td>Distribución exponencial ($\lambda = 1/2$)</td>
                 <td>2</td>
                 <td>4</td>
                 <td>Pruebas de independencia $2 \times 2$</td>
@@ -836,7 +942,7 @@
         </div>
 
         <div class="info">
-          <p class="description">La distribución $\chi^2$ fue desarrollada por Karl Pearson en 1900 como herramienta para pruebas de bondad de ajuste. Esta distribución surge naturalmente como la suma de cuadrados de variables normales independientes y es fundamental en el análisis de datos categóricos, pruebas de independencia y análisis de varianza. Su forma asimétrica y su soporte únicamente en valores positivos la hacen especialmente útil para modelar variabilidad y dispersión en datos experimentales.</p>
+          <p class="description">La distribución $\chi^2$ fue desarrollada por Karl Pearson en 1900 como herramienta para pruebas de bondad de ajuste. Esta distribución surge naturalmente como la suma de cuadrados de variables normales independientes y es fundamental en el análisis de datos categóricos, pruebas de independencia y análisis de varianza. Su forma asimétrica y su dominio únicamente en valores positivos la hacen especialmente útil para modelar variabilidad y dispersión en datos experimentales.</p>
           
           <div class="advantages-section">
             <div class="advantage">
@@ -903,12 +1009,12 @@
   </div>
 
   <!-- Modal para gráficos ampliados -->
-  <div id="chart-modal" class="modal">
+  <div id="chart-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal-content">
-      <span class="close-modal" onclick="closeModal()" aria-label="Cerrar modal">&times;</span>
+      <span class="close-modal" onclick="closeModal()" aria-label="Cerrar modal" role="button" tabindex="0" onkeypress="if(event.key==='Enter'||event.key===' ')closeModal()">&times;</span>
       <h3 class="modal-title" id="modal-title">Distribución $\chi^2$ (Chi-cuadrado)</h3>
       <div class="modal-canvas-container">
-        <canvas id="modal-canvas"></canvas>
+        <canvas id="modal-canvas" role="img" aria-label="Gráfico ampliado de la distribución Chi-cuadrado"></canvas>
       </div>
     </div>
   </div>
@@ -916,30 +1022,60 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
 
+      // --- UTILITY: DEBOUNCE ---
+      // Improves performance by limiting function execution rate
+      function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+          const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+          };
+          clearTimeout(timeout);
+          timeout = setTimeout(later, wait);
+        };
+      }
+
       // --- THEME TOGGLE ---
-      // Manages light/dark mode switching
+      // Manages light/dark mode switching with localStorage persistence
       function toggleTheme() {
         const body = document.body;
         const button = document.querySelector('.theme-toggle');
+        const currentTheme = body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
         
-        if (body.getAttribute('data-theme') === 'dark') {
-          body.setAttribute('data-theme', 'light');
-          button.textContent = '🌙 Modo Oscuro';
-        } else {
-          body.setAttribute('data-theme', 'dark');
-          button.textContent = '☀️ Modo Claro';
+        body.setAttribute('data-theme', newTheme);
+        button.textContent = newTheme === 'dark' ? '☀️ Modo Claro' : '🌙 Modo Oscuro';
+        
+        // Persist theme preference
+        try {
+          localStorage.setItem('theme', newTheme);
+        } catch (e) {
+          console.warn('No se pudo guardar la preferencia de tema:', e);
         }
         
-        // Redraw charts with new theme colors
-        setTimeout(() => {
-          updateChi();
-        }, 100);
+        // Redraw charts with new theme colors using requestAnimationFrame
+        requestAnimationFrame(() => {
+          setTimeout(() => updateChi(), 50);
+        });
+      }
+      
+      // Load saved theme preference
+      try {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+          document.body.setAttribute('data-theme', savedTheme);
+          const button = document.querySelector('.theme-toggle');
+          button.textContent = savedTheme === 'dark' ? '☀️ Modo Claro' : '🌙 Modo Oscuro';
+        }
+      } catch (e) {
+        console.warn('No se pudo cargar la preferencia de tema:', e);
       }
       
       window.toggleTheme = toggleTheme;
 
       // --- SECTION TOGGLE ---
-      // Manages showing/hiding formula and info sections
+      // Manages showing/hiding formula and info sections with lazy MathJax rendering
       function toggleSection(button, sectionId) {
         const section = document.getElementById(sectionId);
         const isShowing = section.classList.contains('show');
@@ -953,12 +1089,18 @@
         if (isShowing) {
           section.classList.remove('show');
           button.textContent = buttonTextMap[sectionId][0];
+          button.setAttribute('aria-expanded', 'false');
         } else {
           section.classList.add('show');
           button.textContent = buttonTextMap[sectionId][1];
-          // Reprocess MathJax when showing a section to ensure proper rendering
-          if (typeof MathJax !== 'undefined' && MathJax.typeset) {
-            setTimeout(() => MathJax.typeset([`#${sectionId}`]), 100);
+          button.setAttribute('aria-expanded', 'true');
+          // Lazy render MathJax when showing section (better initial load performance)
+          if (typeof MathJax !== 'undefined') {
+            MathJax.startup.promise.then(() => {
+              requestAnimationFrame(() => {
+                MathJax.typesetPromise([section]).catch((err) => console.warn('Error al renderizar MathJax:', err));
+              });
+            });
           }
         }
       }
@@ -966,7 +1108,7 @@
       window.toggleSection = toggleSection;
 
       // --- MODAL FUNCTIONS ---
-      // Manages the enlarged chart modal
+      // Manages the enlarged chart modal with keyboard support
       let modalChart = null;
 
       function openModal(distribution) {
@@ -974,13 +1116,21 @@
         const modalTitle = document.getElementById('modal-title');
         
         modalTitle.innerHTML = 'Distribución $\chi^2$ (Chi-cuadrado)';
-        if (typeof MathJax !== 'undefined' && MathJax.typeset) {
-            MathJax.typeset([modalTitle]);
+        if (typeof MathJax !== 'undefined') {
+          MathJax.startup.promise.then(() => {
+            MathJax.typesetPromise([modalTitle]).catch((err) => console.warn('Error al renderizar MathJax:', err));
+          });
         }
         
         modal.classList.add('show');
         
-        setTimeout(() => createModalChart(distribution), 50);
+        // Trap focus in modal for accessibility
+        const closeButton = modal.querySelector('.close-modal');
+        if (closeButton) closeButton.focus();
+        
+        requestAnimationFrame(() => {
+          setTimeout(() => createModalChart(distribution), 50);
+        });
       }
       
       function closeModal() {
@@ -996,26 +1146,56 @@
       window.openModal = openModal;
       window.closeModal = closeModal;
       
+      // Close modal on background click
       document.getElementById('chart-modal').addEventListener('click', (e) => {
         if (e.target.id === 'chart-modal') closeModal();
+      });
+      
+      // Close modal on Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          const modal = document.getElementById('chart-modal');
+          if (modal.classList.contains('show')) {
+            closeModal();
+          }
+        }
       });
 
       // --- MATHEMATICAL HELPER FUNCTIONS ---
       
-      // Gamma function (Lanczos approximation)
+      // Gamma function (Lanczos approximation) with memoization cache
+      const gammaCache = new Map();
       function gamma(z) {
+          // Check cache first for performance
+          const cacheKey = z.toFixed(4);
+          if (gammaCache.has(cacheKey)) {
+            return gammaCache.get(cacheKey);
+          }
+          
           const g = 7;
           const p = [
               0.99999999999980993, 676.5203681218851, -1259.1392167224028,
               771.32342877765313, -176.61502916214059, 12.507343278686905,
               -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7
           ];
-          if (z < 0.5) return Math.PI / (Math.sin(Math.PI * z) * gamma(1 - z));
+          if (z < 0.5) {
+            const result = Math.PI / (Math.sin(Math.PI * z) * gamma(1 - z));
+            gammaCache.set(cacheKey, result);
+            return result;
+          }
           z -= 1;
           let x = p[0];
           for (let i = 1; i < g + 2; i++) x += p[i] / (z + i);
           const t = z + g + 0.5;
-          return Math.sqrt(2 * Math.PI) * Math.pow(t, z + 0.5) * Math.exp(-t) * x;
+          const result = Math.sqrt(2 * Math.PI) * Math.pow(t, z + 0.5) * Math.exp(-t) * x;
+          
+          // Store in cache (limit cache size to prevent memory issues)
+          if (gammaCache.size > 1000) {
+            const firstKey = gammaCache.keys().next().value;
+            gammaCache.delete(firstKey);
+          }
+          gammaCache.set(cacheKey, result);
+          return result;
       }
 
       // Chi-squared Probability Density Function (PDF)
@@ -1078,12 +1258,15 @@
         const nu = parseFloat(document.getElementById('chi-nu').value);
         const compareMultiple = document.getElementById('compare-multiple').checked;
         
-        const labels = [];
-        const chiData = [], chiData2 = [], chiData3 = [];
-        
         const maxX = Math.max(25, nu * 2.5);
         const numPoints = isModal ? 400 : 200;
         const step = maxX / numPoints;
+
+        // Pre-calculate data for better performance
+        const labels = [];
+        const chiData = [];
+        const chiData2 = [];
+        const chiData3 = [];
 
         for (let i = 0; i <= numPoints; i++) {
           const x = i * step;
@@ -1111,14 +1294,39 @@
         if (compareMultiple) {
           const nu2 = Math.max(1, nu - 2);
           const nu3 = nu + 3;
-          datasets.push({ label: `χ²(${nu2})`, data: chiData2, borderColor: '#f97316', borderWidth: 2, borderDash: [5, 5], fill: false });
-          datasets.push({ label: `χ²(${nu3})`, data: chiData3, borderColor: '#ef4444', borderWidth: 2, borderDash: [10, 5], fill: false });
-          multipleLegend.style.display = 'flex';
+          datasets.push({ 
+            label: `χ²(${nu2})`, 
+            data: chiData2, 
+            borderColor: '#f97316', 
+            borderWidth: 2, 
+            borderDash: [5, 5], 
+            fill: false 
+          });
+          datasets.push({ 
+            label: `χ²(${nu3})`, 
+            data: chiData3, 
+            borderColor: '#ef4444', 
+            borderWidth: 2, 
+            borderDash: [10, 5], 
+            fill: false 
+          });
+          if (multipleLegend) multipleLegend.style.display = 'flex';
         } else {
-          multipleLegend.style.display = 'none';
+          if (multipleLegend) multipleLegend.style.display = 'none';
         }
         
         const chartInstance = isModal ? modalChart : mainChart;
+        
+        // Update existing chart if possible (better performance)
+        if (chartInstance && !isModal) {
+          chartInstance.data.labels = labels;
+          chartInstance.data.datasets = datasets;
+          chartInstance.options = createChartOptions(isModal);
+          chartInstance.update('none'); // Skip animations for better performance
+          return chartInstance;
+        }
+        
+        // Destroy and recreate only if necessary
         if (chartInstance) {
           chartInstance.destroy();
         }
@@ -1135,18 +1343,24 @@
         modalChart = createChiChart('modal-canvas', true);
       }
 
+      // Cache DOM elements for better performance
+      const chiNuSlider = document.getElementById('chi-nu');
+      const chiNuValue = document.getElementById('chi-nu-value');
+
       function updateChi() {
-        const nu = parseFloat(document.getElementById('chi-nu').value);
-        document.getElementById('chi-nu-value').textContent = nu;
+        const nu = parseFloat(chiNuSlider.value);
+        chiNuValue.textContent = nu;
         
-        const slider = document.getElementById('chi-nu');
-        const percent = ((nu - slider.min) / (slider.max - slider.min)) * 100;
-        slider.style.setProperty('--thumb-pos', `${percent}%`);
+        const percent = ((nu - chiNuSlider.min) / (chiNuSlider.max - chiNuSlider.min)) * 100;
+        chiNuSlider.style.setProperty('--thumb-pos', `${percent}%`);
         
         mainChart = createChiChart('plot-chi');
       }
       
-      window.updateChi = updateChi;
+      // Debounced version for slider input (better performance)
+      const debouncedUpdateChi = debounce(updateChi, 100);
+      
+      window.updateChi = debouncedUpdateChi;
 
       // --- INITIALIZE ---
       updateChi();
